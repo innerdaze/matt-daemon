@@ -1,0 +1,24 @@
+{
+  "name": "matt-daemon",
+  "version": "1.0.0",
+  "description": "A lightweight HTTP daemon for serving a static site. With Matt Daemon, there are no surprises. He just serves",
+  "main": "matt-daemon.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lsdriscoll/matt-daemon.git"
+  },
+  "keywords": [
+    "http",
+    "static",
+    "site"
+  ],
+  "author": "Lee Driscoll",
+  "license": "Public",
+  "bugs": {
+    "url": "https://github.com/lsdriscoll/matt-daemon/issues"
+  },
+  "homepage": "https://github.com/lsdriscoll/matt-daemon"
+}
