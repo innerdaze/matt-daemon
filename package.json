@@ -20,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/lsdriscoll/matt-daemon/issues"
   },
-  "homepage": "https://github.com/lsdriscoll/matt-daemon"
+  "homepage": "https://github.com/lsdriscoll/matt-daemon",
+  "dependencies": {
+    "daemon": "^1.1.0",
+    "http-server": "^0.7.2"
+  }
 }
