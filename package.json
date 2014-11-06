@@ -23,6 +23,8 @@
   "homepage": "https://github.com/lsdriscoll/matt-daemon",
   "dependencies": {
     "daemon": "^1.1.0",
-    "http-server": "^0.7.2"
+    "debug": "^2.1.0",
+    "http-server": "^0.7.2",
+    "log": "^1.4.0"
   }
 }
