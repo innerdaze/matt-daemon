@@ -1,2 +1,4 @@
-node_nodules
+node_modules
+.idea/workspace.xml
+.idea/tasks.xml
 npm-debug.log
