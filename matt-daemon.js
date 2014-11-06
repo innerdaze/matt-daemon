@@ -33,8 +33,6 @@ module.exports = function(opts){
     var PORT = opts.port;
     var SITE_DIRECTORY = opts.root;
 
-    var kill = require('./lib/kill-child-process').kill;
-
     var exec = require('child_process').exec;
     var fs = require('fs');
     var path = require('path');
@@ -74,7 +72,6 @@ module.exports = function(opts){
     }
 
     util.puts('Starting Matt Daemon Server');
-
 
     var childProcess = exec("./node_modules/.bin/http-server " + SITE_DIRECTORY + " -p " + PORT, {
         cwd: __dirname
