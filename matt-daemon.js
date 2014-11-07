@@ -69,7 +69,8 @@ module.exports = function(opts){
 
     // Spawn HTTP server
     var childProcess = exec('"./node_modules/.bin/http-server" "' + SITE_DIRECTORY + '" -p ' + PORT, {
-        cwd: __dirname
+        cwd: __dirname,
+        maxBuffer: 1024 * 500
     }, puts);
 
     // Stream outputs to log files
