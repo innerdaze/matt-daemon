@@ -11,6 +11,12 @@
  * @copyright       Fuck copyright
  *
  */
+/**
+ * @param {Object}  opts
+ * @param {Number}  opts.port       Port to listen for incoming HTTP requests
+ * @param {String}  opts.root       Folder to use as site root directory
+ * @param {Boolean} opts.justMatt   True to not daemonize. Useful for debugging as the HTTP server's stdout will be piped to the console
+ */
 module.exports = function(opts){
 
     var util = require('util');
