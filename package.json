@@ -1,6 +1,6 @@
 {
   "name": "matt-daemon",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "A lightweight HTTP daemon for serving a static site. With Matt Daemon, there are no surprises. He just serves",
   "main": "matt-daemon.js",
   "scripts": {
