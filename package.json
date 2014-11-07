@@ -24,6 +24,7 @@
   "dependencies": {
     "daemon": "^1.1.0",
     "debug": "^2.1.0",
+    "dye": "^0.2.1",
     "http-server": "^0.7.2",
     "log": "^1.4.0",
     "tree-kill": "0.0.6"
