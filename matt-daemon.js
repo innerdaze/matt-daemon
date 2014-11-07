@@ -36,6 +36,7 @@ module.exports = function(opts){
     var exec = require('child_process').exec;
     var fs = require('fs');
     var path = require('path');
+    var pkill = require('tree-kill');
     var Log = require('log');
     //var debugLog = new Log('debug', fs.createWriteStream('matt-daemon.debug.log'));
     var errorLog = new Log('error', fs.createWriteStream('matt-daemon.error.log'));
@@ -48,7 +49,7 @@ module.exports = function(opts){
         var pid = fs.readFileSync(pidFilePath);
         if (pid.length && pid !== process.pid) {
             util.puts('Killing process with id: ' + pid);
-            process.kill(pid, 'SIGHUP');
+            pkill(pid, 'SIGHUP');
             fs.writeFile(pidFilePath, '');
         }
     }
@@ -67,7 +68,7 @@ module.exports = function(opts){
     }
 
     // Spawn HTTP server
-    var childProcess = exec('./node_modules/.bin/http-server ' + SITE_DIRECTORY + ' -p ' + PORT, {
+    var childProcess = exec('"./node_modules/.bin/http-server" "' + SITE_DIRECTORY + '" -p ' + PORT, {
         cwd: __dirname
     }, puts);
 
