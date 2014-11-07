@@ -95,11 +95,4 @@ module.exports = function(opts){
         require('daemon')();
     }
 
-/**
- * Child_Process Events
- * error
- * exit
- * close
- * disconnect
- * message
- **/
+};
