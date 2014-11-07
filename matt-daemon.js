@@ -90,9 +90,10 @@ module.exports = function(opts){
     util.puts('Starting Matt Daemon Server | PID: ' + childProcess.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY);
     infoLog.info('Starting Matt Daemon Server | PID: ' + childProcess.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY);
 
-    require('daemon')();
-
-};
+    // If justMatt is false, daemonize
+    if(!opts.justMatt) {
+        require('daemon')();
+    }
 
 /**
  * Child_Process Events
