@@ -78,10 +78,6 @@ module.exports = function(opts){
 
     childProcess.stderr.on('data', errorLog.error.bind(errorLog));
 
-    childProcess.stdout.on('data', function(data){
-        infoLog.info(data.toString());
-    });
-
     // Write PID to file
     fs.writeFile(pidFilePath, childProcess.pid.toString());
 
