@@ -48,13 +48,15 @@ module.exports = function(opts){
     var errorLog = new Log('error', fs.createWriteStream('matt-daemon.error.log'));
     var infoLog = new Log('info', fs.createWriteStream('matt-daemon.log'));
 
+    var print = require('dye').zalgo;
+
     var pidFilePath = 'matt-daemon.pid';
 
     // First let's check for existing instance and kill it off
     if(fs.existsSync(pidFilePath)) {
         var pid = fs.readFileSync(pidFilePath);
         if (pid.length && pid !== process.pid) {
-            util.puts('Killing process with id: ' + pid);
+            util.puts(print('Killing process with id: ' + pid));
             pkill(pid, 'SIGHUP');
             fs.writeFile(pidFilePath, '');
         }
@@ -87,7 +89,7 @@ module.exports = function(opts){
     // Write PID to file
     fs.writeFile(pidFilePath, childProcess.pid.toString());
 
-    util.puts('Starting Matt Daemon Server | PID: ' + childProcess.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY);
+    util.puts(print('Starting Matt Daemon Server | PID: ' + childProcess.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY));
     infoLog.info('Starting Matt Daemon Server | PID: ' + childProcess.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY);
 
     // If justMatt is false, daemonize
