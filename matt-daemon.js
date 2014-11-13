@@ -36,65 +36,101 @@ module.exports = function(opts){
         return;
     }
 
-    var PORT = opts.port;
-    var SITE_DIRECTORY = opts.root;
-
-    var exec = require('child_process').exec;
+    var spawn = require('child_process').spawn;
     var fs = require('fs');
     var path = require('path');
     var pkill = require('tree-kill');
+    var print = require('dye').zalgo;
+    var daemon = require('daemon');
+    var defaults = require('defaults');
+
+
+    var defaultOpts = {
+
+        port    : 9000,
+        root    : './public',
+        pidFile : 'matt-daemon.pid',
+        justMatt: false
+
+    };
+
+    var config = defaults(opts, defaultOpts);
+
+    var PORT = config.port;
+    var SITE_DIRECTORY = config.root;
+    var PID_FILE_PATH = config.pidFile;
+    var JUST_MATT = config.justMatt;
+
+
+    // Set up log streams
+
     var Log = require('log');
-    //var debugLog = new Log('debug', fs.createWriteStream('matt-daemon.debug.log'));
+
+    var debugLog = new Log('debug', fs.createWriteStream('matt-daemon.debug.log'));
     var errorLog = new Log('error', fs.createWriteStream('matt-daemon.error.log'));
     var infoLog = new Log('info', fs.createWriteStream('matt-daemon.log'));
 
-    var print = require('dye').zalgo;
-
-    var pidFilePath = 'matt-daemon.pid';
-
     // First let's check for existing instance and kill it off
-    if(fs.existsSync(pidFilePath)) {
-        var pid = fs.readFileSync(pidFilePath);
-        if (pid.length && pid !== process.pid) {
+
+    if(fs.existsSync(PID_FILE_PATH)) { // Does a PID file exist
+
+        var pid = fs.readFileSync(PID_FILE_PATH); // Read the PID
+
+        if (pid.length && pid !== process.pid) { // Check it's not the PID of the current process
+
             util.puts(print('Killing process with id: ' + pid));
-            pkill(pid, 'SIGHUP');
-            fs.writeFile(pidFilePath, '');
+
+            pkill(pid, 'SIGTERM'); // Kill the process tree
+
+            fs.writeFile(PID_FILE_PATH, ''); // Empty the PID file
         }
     }
 
-    // Function to call when HTTP Server exits
-    function puts(error, stdout, stderr) {
+    util.puts(print('Starting Matt Daemon Server | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY));
 
-        infoLog.info(stdout);
+    var httpServer;
 
-        errorLog.error(stderr);
+    // Spawn HTTP server - if justMatt is false, daemonize
 
-        if (error !== null) {
-            errorLog.error(error);
-        }
+    if(!JUST_MATT) {
+
+        httpServer = daemon.daemon('./node_modules/.bin/http-server', [SITE_DIRECTORY, '-p', PORT], {
+            cwd: __dirname,
+            stdout: infoLog.info.stream,
+            stderr: errorLog.error.stream
+        });
+
+    } else {
+
+        httpServer = spawn('./node_modules/.bin/http-server', [SITE_DIRECTORY, '-p', PORT], {
+            cwd: __dirname,
+            stdio: 'pipe'
+        });
+
+        // Configured logging on stdout and stderr
+
+        httpServer.stderr.setEncoding('utf8');
+        httpServer.stdout.setEncoding('utf8');
+
+        httpServer.stderr.on('data', errorLog.error.bind(errorLog));
+        httpServer.stdout.on('data', function(data){
+            // infoLog.info(process.pid);
+            infoLog.info(data);
+        });
 
     }
 
-    // Spawn HTTP server
-    var childProcess = exec('"./node_modules/.bin/http-server" "' + SITE_DIRECTORY + '" -p ' + PORT, {
-        cwd: __dirname,
-        maxBuffer: 1024 * 500
-    }, puts);
+    httpServer.on('close', function (code) {
+        if (code !== 0) {
+            log.info('process exited with code ' + code);
+        }
+    });
 
-    // Stream outputs to log files
-    childProcess.on('error', errorLog.error.bind(errorLog));
-
-    childProcess.stderr.on('data', errorLog.error.bind(errorLog));
 
     // Write PID to file
-    fs.writeFile(pidFilePath, childProcess.pid.toString());
 
-    util.puts(print('Starting Matt Daemon Server | PID: ' + childProcess.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY));
-    infoLog.info('Starting Matt Daemon Server | PID: ' + childProcess.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY);
+    fs.writeFile(PID_FILE_PATH, httpServer.pid.toString());
 
-    // If justMatt is false, daemonize
-    if(!opts.justMatt) {
-        require('daemon')();
-    }
+    infoLog.info('Starting Matt Daemon Server | Daemon PID: ' + process.pid + ' | HTTP PID: ' + httpServer.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY);
 
 };
