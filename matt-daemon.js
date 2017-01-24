@@ -8,7 +8,7 @@
  *
  * @date            04/11/14
  *
- * @copyright       Fuck copyright
+ * @license       CC
  *
  */
 /**
