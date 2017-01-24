@@ -15,56 +15,64 @@
  * @param {Object}  opts
  * @param {Number}  opts.port       Port to listen for incoming HTTP requests
  * @param {String}  opts.root       Folder to use as site root directory
- * @param {Boolean} opts.justMatt   True to not daemonize. Useful for debugging as the HTTP server's stdout will be piped to the console
+ * @param {Boolean} opts.daemonize  True to not daemonize. Useful for debugging as the HTTP server's stdout will be piped to the console
+ * @param {String}  opts.pidFile    PID file location to use
  */
 module.exports = function(opts){
 
+    // 0 - Load Dependencies
+
     var util = require('util');
-
-    if(!opts){
-        util.puts('Matt Daemon can\'t guess your config, so help a chap out.');
-        return;
-    }
-
-    if(!opts.port){
-        util.puts('Matt Daemon would love to serve, but he needs to know what port you want to publish on.');
-        return;
-    }
-
-    if(!opts.root){
-        util.puts('Matt Daemon has almost figured it out, but he needs to know which folder to serve up.');
-        return;
-    }
-
     var spawn = require('child_process').spawn;
     var fs = require('fs');
     var path = require('path');
     var pkill = require('tree-kill');
     var print = require('dye').zalgo;
-    var daemon = require('daemon');
-    var defaults = require('defaults');
+    var Log = require('log');
 
 
-    var defaultOpts = {
+    // 1.1 - Merge config with defaults
 
-        port    : 9000,
-        root    : './public',
-        pidFile : 'matt-daemon.pid',
-        justMatt: false
+    var defaultConfig = require('./matt-daemon.json');
 
-    };
+    var config = require('defaults')(opts, defaultConfig);
 
-    var config = defaults(opts, defaultOpts);
+    // 1.2 - Validate Config
 
+    if(typeof config.listenPort !== 'number'){
+        util.puts('Matt Daemon would love to serve, but he needs to know what port you want to publish on');
+        return;
+    }
+
+    if(typeof config.root !== 'string'){
+        util.puts('Matt Daemon has almost figured it out, but he needs to know which folder to serve up');
+        return;
+    }
+
+    if(typeof config.pidFile !== 'string'){
+        util.puts('Matt Daemon wants to get started, but he needs to know where to store his PID');
+        return;
+    }
+
+    if(typeof config.daemonize !== 'boolean'){
+        util.puts('Matt Daemon is about to spawn, but he needs to know whether or not he should daemonize');
+        return;
+    }
+
+
+    // 1.3 - Create PID manager
+
+    var pid = require('daemon-pid')(config.pidFile);
+
+
+    // 1.4 - Store configs as variables
     var PORT = config.port;
     var SITE_DIRECTORY = config.root;
     var PID_FILE_PATH = config.pidFile;
-    var JUST_MATT = config.justMatt;
+    var DAEMONIZE = config.daemonize;
 
 
-    // Set up log streams
-
-    var Log = require('log');
+    // 1.5 Set up log streams
 
     var debugLog = new Log('debug', fs.createWriteStream('matt-daemon.debug.log'));
     var errorLog = new Log('error', fs.createWriteStream('matt-daemon.error.log'));
@@ -72,35 +80,39 @@ module.exports = function(opts){
 
     // First let's check for existing instance and kill it off
 
-    if(fs.existsSync(PID_FILE_PATH)) { // Does a PID file exist
-
-        var pid = fs.readFileSync(PID_FILE_PATH); // Read the PID
-
-        if (pid.length && pid !== process.pid) { // Check it's not the PID of the current process
-
-            util.puts(print('Killing process with id: ' + pid));
-
-            pkill(pid, 'SIGTERM'); // Kill the process tree
-
-            fs.writeFile(PID_FILE_PATH, ''); // Empty the PID file
-        }
-    }
+    //if(fs.existsSync(PID_FILE_PATH)) { // Does a PID file exist
+    //
+    //    var pid = fs.readFileSync(PID_FILE_PATH); // Read the PID
+    //
+    //    if (pid.length && pid !== process.pid) { // Check it's not the PID of the current process
+    //
+    //        util.puts(print('Killing process with id: ' + pid));
+    //
+    //        pkill(pid, 'SIGTERM'); // Kill the process tree
+    //
+    //        fs.writeFile(PID_FILE_PATH, ''); // Empty the PID file
+    //    }
+    //}
 
     util.puts(print('Starting Matt Daemon Server | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY));
 
+
+    // 2 - Spawn HTTP server
+
     var httpServer;
 
-    // Spawn HTTP server - if justMatt is false, daemonize
+    if(DAEMONIZE) { // 2.1 - If justMatt is false, daemonize
 
-    if(!JUST_MATT) {
-
-        httpServer = daemon.daemon('./node_modules/.bin/http-server', [SITE_DIRECTORY, '-p', PORT], {
+        httpServer = spawn('./node_modules/.bin/http-server', [SITE_DIRECTORY, '-p', PORT], {
             cwd: __dirname,
-            stdout: infoLog.info.stream,
-            stderr: errorLog.error.stream
+            stdio: 'ignore',
+            //stdio: ['ignore', infoLog.info.stream, errorLog.error.stream],
+            detached: true
         });
 
-    } else {
+        httpServer.unref();
+
+    } else { // 2.1 - Otherwise, create as normal
 
         httpServer = spawn('./node_modules/.bin/http-server', [SITE_DIRECTORY, '-p', PORT], {
             cwd: __dirname,
@@ -122,14 +134,18 @@ module.exports = function(opts){
 
     httpServer.on('close', function (code) {
         if (code !== 0) {
-            log.info('process exited with code ' + code);
+            infoLog.info('process exited with code ' + code);
         }
     });
 
 
     // Write PID to file
 
-    fs.writeFile(PID_FILE_PATH, httpServer.pid.toString());
+    pid._pid = httpServer.pid;
+
+    pid.write();
+
+    //fs.writeFile(PID_FILE_PATH, httpServer.pid.toString());
 
     infoLog.info('Starting Matt Daemon Server | Daemon PID: ' + process.pid + ' | HTTP PID: ' + httpServer.pid + ' | PORT: ' + PORT + ' | ROOT: ' + SITE_DIRECTORY);
 
